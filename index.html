@@ -21,7 +21,6 @@
         
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
             
-            <!-- بنیادی معلومات -->
             <div>
                 <label>بکس کوڈ / نمبر *</label>
                 <input type="text" id="box_code" class="input-box" placeholder="مثلاً: B-101" required>
@@ -55,7 +54,6 @@
                 <input type="text" id="famous_landmark" class="input-box" placeholder="جیسے: جامع مسجد کے پاس، مین مارکیٹ">
             </div>
 
-            <!-- علاقائی درجہ بندی (Regional Hierarchy) -->
             <div>
                 <label>ملک</label>
                 <input type="text" id="country" class="input-box bg-gray-100" value="پاکستان" readonly>
@@ -67,8 +65,6 @@
                     <option value="پنجاب">پنجاب</option>
                     <option value="بلوچستان">بلوچستان</option>
                     <option value="خیبر پختونخوا">خیبر پختونخوا</option>
-                    <option value="گلگت بلتستان">گلگت بلتستان</option>
-                    <option value="آزاد کشمیر">آزاد کشمیر</option>
                 </select>
             </div>
             
@@ -101,16 +97,14 @@
     </div>
 
     <script>
-        // آپ کی Supabase کی معلومات ایڈ کر دی گئی ہیں
         const SUPABASE_URL = 'https://fuczdweonzenfdbfofki.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Ez9kykv4IyMx_6yr2CZp9g_C6qRzCYu';
-        // ----------------------------------------------------
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // یہاں نام تبدیل کیا گیا ہے تاکہ براؤزر کریش نہ ہو
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function registerBox() {
             const btn = document.getElementById('submitBtn');
-            const msgBox = document.getElementById('messageBox');
             
             const boxCode = document.getElementById('box_code').value.trim();
             const donorName = document.getElementById('donor_name').value.trim();
@@ -140,18 +134,22 @@
                 uc: document.getElementById('uc').value
             };
 
-            const { data, error } = await supabase.from('registered_boxes').insert([boxData]);
+            try {
+                // یہاں بھی supabaseClient کا استعمال کیا گیا ہے
+                const { data, error } = await supabaseClient.from('registered_boxes').insert([boxData]);
 
-            if (error) {
-                console.error(error);
-                let errorMsg = "سسٹم ایرر آ گیا ہے۔";
-                if(error.message.includes('duplicate') || error.code === '23505') {
-                    errorMsg = `معذرت! یہ بکس کوڈ (${boxCode}) پہلے سے سسٹم میں موجود ہے۔`;
+                if (error) {
+                    let errorMsg = "سسٹم ایرر: " + error.message;
+                    if(error.message.includes('duplicate') || error.code === '23505') {
+                        errorMsg = `معذرت! یہ بکس کوڈ (${boxCode}) پہلے سے سسٹم میں موجود ہے۔`;
+                    }
+                    showMsg(errorMsg, 'red');
+                } else {
+                    showMsg('الحمدللہ! بکس کا ڈیٹا کامیابی کے ساتھ محفوظ ہو گیا ہے۔', 'green');
+                    clearForm();
                 }
-                showMsg(errorMsg, 'red');
-            } else {
-                showMsg('الحمدللہ! بکس کا ڈیٹا کامیابی کے ساتھ محفوظ ہو گیا ہے۔', 'green');
-                clearForm();
+            } catch (err) {
+                showMsg('نیٹ ورک یا کنکشن کا مسئلہ ہے۔', 'red');
             }
 
             btn.innerText = "ڈیٹا محفوظ کریں (رجسٹر بکس)";
