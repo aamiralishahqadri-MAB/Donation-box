@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ڈونیشن بکس مینجمنٹ سسٹم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
+        body { font-family: 'Noto Nastaliq Urdu', serif; background-color: #f3f4f6; }
+        .input-box { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-family: Arial, sans-serif; text-align: right; }
+        .input-box:focus { outline: none; border-color: #059669; ring: 2px; }
+        label { font-size: 14px; font-weight: bold; color: #374151; display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-3xl mx-auto bg-white p-6 sm:p-10 rounded-2xl shadow-xl border-t-8 border-emerald-600">
+        <h2 class="text-3xl font-extrabold text-center text-emerald-700 mb-8 border-b-2 pb-4">بکس رجسٹریشن فارم</h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            
+            <!-- بنیادی معلومات -->
+            <div>
+                <label>بکس کوڈ / نمبر *</label>
+                <input type="text" id="box_code" class="input-box" placeholder="مثلاً: B-101" required>
+            </div>
+            <div>
+                <label>عطیہ دہندہ (ڈونر) کا نام *</label>
+                <input type="text" id="donor_name" class="input-box" placeholder="پورا نام لکھیں" required>
+            </div>
+
+            <div>
+                <label>دکان یا مقام کا نام *</label>
+                <input type="text" id="shop_name" class="input-box" placeholder="جہاں بکس رکھا جائے گا" required>
+            </div>
+            <div>
+                <label>ڈیپارٹمنٹ / شعبہ</label>
+                <select id="department" class="input-box" dir="rtl">
+                    <option value="">شعبہ منتخب کریں...</option>
+                    <option value="عطیات بکس (عمومی)">عطیات بکس (عمومی)</option>
+                    <option value="عطیات بکس (مخصوص)">عطیات بکس (مخصوص)</option>
+                    <option value="دیگر">دیگر شعبہ جات</option>
+                </select>
+            </div>
+
+            <div class="sm:col-span-2">
+                <label>مقام کا مکمل ایڈریس *</label>
+                <input type="text" id="shop_address" class="input-box" placeholder="دکان، مکان یا دفتر کا مکمل پتہ لکھیں">
+            </div>
+
+            <div class="sm:col-span-2">
+                <label>قریبی مشہور جگہ (Landmark)</label>
+                <input type="text" id="famous_landmark" class="input-box" placeholder="جیسے: جامع مسجد کے پاس، مین مارکیٹ">
+            </div>
+
+            <!-- علاقائی درجہ بندی (Regional Hierarchy) -->
+            <div>
+                <label>ملک</label>
+                <input type="text" id="country" class="input-box bg-gray-100" value="پاکستان" readonly>
+            </div>
+            <div>
+                <label>صوبہ</label>
+                <select id="province" class="input-box" dir="rtl">
+                    <option value="سندھ">سندھ</option>
+                    <option value="پنجاب">پنجاب</option>
+                    <option value="بلوچستان">بلوچستان</option>
+                    <option value="خیبر پختونخوا">خیبر پختونخوا</option>
+                    <option value="گلگت بلتستان">گلگت بلتستان</option>
+                    <option value="آزاد کشمیر">آزاد کشمیر</option>
+                </select>
+            </div>
+            
+            <div>
+                <label>ڈویژن</label>
+                <input type="text" id="division" class="input-box" placeholder="اپنے ڈویژن کا نام لکھیں">
+            </div>
+            <div>
+                <label>ڈسٹرکٹ / میٹروپولیٹن</label>
+                <input type="text" id="district" class="input-box" placeholder="اپنے ضلع کا نام لکھیں">
+            </div>
+            
+            <div>
+                <label>تحصیل / ٹاؤن</label>
+                <input type="text" id="tehsil" class="input-box" placeholder="تحصیل یا ٹاؤن">
+            </div>
+            <div>
+                <label>یونین کونسل (UC) / برانچ</label>
+                <input type="text" id="uc" class="input-box" placeholder="یونین کونسل نمبر یا علاقہ">
+            </div>
+        </div>
+
+        <div class="mt-10">
+            <button onclick="registerBox()" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-xl text-xl shadow-lg transition-all duration-300">
+                ڈیٹا محفوظ کریں (رجسٹر بکس)
+            </button>
+        </div>
+        
+        <div id="messageBox" class="mt-6 text-center font-bold p-4 rounded-lg hidden"></div>
+    </div>
+
+    <script>
+        // آپ کی Supabase کی معلومات ایڈ کر دی گئی ہیں
+        const SUPABASE_URL = 'https://fuczdweonzenfdbfofki.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Ez9kykv4IyMx_6yr2CZp9g_C6qRzCYu';
+        // ----------------------------------------------------
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function registerBox() {
+            const btn = document.getElementById('submitBtn');
+            const msgBox = document.getElementById('messageBox');
+            
+            const boxCode = document.getElementById('box_code').value.trim();
+            const donorName = document.getElementById('donor_name').value.trim();
+            const shopName = document.getElementById('shop_name').value.trim();
+
+            if(!boxCode || !donorName || !shopName) {
+                showMsg('براہ کرم بکس کوڈ، ڈونر کا نام اور مقام کا نام لازمی درج کریں!', 'red');
+                return;
+            }
+
+            btn.innerText = "پروسیس ہو رہا ہے... تھوڑا انتظار کریں";
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const boxData = {
+                box_code: boxCode,
+                donor_name: donorName,
+                shop_name: shopName,
+                department: document.getElementById('department').value,
+                shop_address: document.getElementById('shop_address').value,
+                famous_landmark: document.getElementById('famous_landmark').value,
+                country: document.getElementById('country').value,
+                province: document.getElementById('province').value,
+                division: document.getElementById('division').value,
+                district: document.getElementById('district').value,
+                tehsil: document.getElementById('tehsil').value,
+                uc: document.getElementById('uc').value
+            };
+
+            const { data, error } = await supabase.from('registered_boxes').insert([boxData]);
+
+            if (error) {
+                console.error(error);
+                let errorMsg = "سسٹم ایرر آ گیا ہے۔";
+                if(error.message.includes('duplicate') || error.code === '23505') {
+                    errorMsg = `معذرت! یہ بکس کوڈ (${boxCode}) پہلے سے سسٹم میں موجود ہے۔`;
+                }
+                showMsg(errorMsg, 'red');
+            } else {
+                showMsg('الحمدللہ! بکس کا ڈیٹا کامیابی کے ساتھ محفوظ ہو گیا ہے۔', 'green');
+                clearForm();
+            }
+
+            btn.innerText = "ڈیٹا محفوظ کریں (رجسٹر بکس)";
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function showMsg(text, color) {
+            const msgBox = document.getElementById('messageBox');
+            msgBox.innerText = text;
+            msgBox.className = `mt-6 text-center font-bold p-4 rounded-lg border-2 ${color === 'red' ? 'bg-red-100 text-red-700 border-red-300' : 'bg-green-100 text-green-700 border-green-300'}`;
+            msgBox.style.display = 'block';
+        }
+
+        function clearForm() {
+            document.getElementById('box_code').value = '';
+            document.getElementById('donor_name').value = '';
+            document.getElementById('shop_name').value = '';
+            document.getElementById('shop_address').value = '';
+            document.getElementById('famous_landmark').value = '';
+        }
+    </script>
+</body>
+</html>
